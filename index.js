@@ -29,6 +29,8 @@ async function run() {
         await client.connect();
 
 
+        const userCollection = client.db('bistroDB').collection('users');
+
         const menuCollection = client.db('bistroDB').collection('menu');
 
         const reviewCollection = client.db('bistroDB').collection('reviews');
@@ -38,6 +40,13 @@ async function run() {
         // to read menu collection
         app.get('/menu', async (req, res) => {
             const result = await menuCollection.find().toArray();
+            res.send(result);
+        })
+
+        // Create users collection
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const result = await userCollection.insertOne(user);
             res.send(result);
         })
 

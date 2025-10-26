@@ -11,7 +11,7 @@ app.use(express.json());
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.tye2x.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -54,11 +54,19 @@ async function run() {
             res.send(result);
         })
 
-        // to read carts collection
+        // Read carts collection
         app.get('/carts', async (req, res) => {
             const email = req.query.email;
             const query = { email: email }
             const result = await cartCollection.find(query).toArray();
+            res.send(result);
+        })
+
+        // Delete a item from cart collection
+        app.delete('/carts/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await cartCollection.deleteOne(query);
             res.send(result);
         })
 

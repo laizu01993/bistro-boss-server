@@ -46,7 +46,20 @@ async function run() {
         // Create users collection
         app.post('/users', async (req, res) => {
             const user = req.body;
+
+            // save user if he doesn't exist in the database(insert email if user doesn't exist)
+            const query = { email: user.email }
+            const existingUser = await userCollection.findOne(query);
+            if(existingUser){
+                return res.send({message: 'user already exists', insertedId: null})
+            }
             const result = await userCollection.insertOne(user);
+            res.send(result);
+        })
+
+        // Read user collection
+        app.get('/users', async (req, res) => {
+            const result = await userCollection.find().toArray();
             res.send(result);
         })
 

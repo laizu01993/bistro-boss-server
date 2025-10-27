@@ -50,8 +50,8 @@ async function run() {
             // save user if he doesn't exist in the database(insert email if user doesn't exist)
             const query = { email: user.email }
             const existingUser = await userCollection.findOne(query);
-            if(existingUser){
-                return res.send({message: 'user already exists', insertedId: null})
+            if (existingUser) {
+                return res.send({ message: 'user already exists', insertedId: null })
             }
             const result = await userCollection.insertOne(user);
             res.send(result);
@@ -62,6 +62,28 @@ async function run() {
             const result = await userCollection.find().toArray();
             res.send(result);
         })
+
+        // Create make admin API
+        app.patch('/users/admin/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    role: 'Admin'
+                }
+            }
+            const result = await userCollection.updateOne(filter, updatedDoc)
+            res.send(result);
+        })
+
+        // Delete a user from user collection
+        app.delete('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await userCollection.deleteOne(query);
+            res.send(result);
+        })
+
 
         // to read reviews collection
         app.get('/reviews', async (req, res) => {

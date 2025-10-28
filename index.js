@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 require('dotenv').config();
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 5000;
 
 
@@ -69,7 +70,7 @@ async function run() {
             const filter = { _id: new ObjectId(id) };
             const updatedDoc = {
                 $set: {
-                    role: 'Admin'
+                    role: 'admin'
                 }
             }
             const result = await userCollection.updateOne(filter, updatedDoc)

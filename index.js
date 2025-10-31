@@ -64,13 +64,13 @@ async function run() {
         }
 
         // use verify after verifyToken
-        const verifyAdmin = async(req, res, next) =>{
+        const verifyAdmin = async (req, res, next) => {
             const email = req.decoded.email;
-            const query = {email: email};
+            const query = { email: email };
             const user = await userCollection.findOne(query);
             const isAdmin = user?.role === 'admin';
-            if(!isAdmin){
-                return res.status(403).send({message: 'forbidden access'})
+            if (!isAdmin) {
+                return res.status(403).send({ message: 'forbidden access' })
             }
             next();
         }
@@ -88,6 +88,15 @@ async function run() {
             const result = await menuCollection.find().toArray();
             res.send(result);
         })
+
+        // Delete a menu item from menu collection
+        app.delete('/menu/:id', verifyToken, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await menuCollection.deleteOne(query);
+            res.send(result);
+        })
+
 
         // Create users collection
         app.post('/users', async (req, res) => {
@@ -126,7 +135,7 @@ async function run() {
         })
 
         // Create make admin API
-        app.patch('/users/admin/:id',verifyToken, verifyAdmin, async (req, res) => {
+        app.patch('/users/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
             const updatedDoc = {
@@ -139,7 +148,7 @@ async function run() {
         })
 
         // Delete a user from user collection
-        app.delete('/users/:id',verifyToken, verifyAdmin, async (req, res) => {
+        app.delete('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await userCollection.deleteOne(query);

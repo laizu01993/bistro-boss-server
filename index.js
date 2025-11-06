@@ -232,20 +232,32 @@ async function run() {
                 clientSecret: paymentIntent.client_secret,
             });
         });
+        // to read payment data from payment collection by email
+        app.get('/payments/:email', verifyToken, async (req, res) => {
+            const query = { email: req.params.email }
+            if (req.params.email !== req.decoded.email){
+                return res.status(403).send({message: "forbidden access"})
+            }
+                const result = await paymentsCollection.find(query).toArray();
+            res.send(result);
+        })
+
 
         // create payment API for save payment info
-        app.post('/payments', async(req, res) => {
+        app.post('/payments', async (req, res) => {
             const payment = req.body;
-            const result = await paymentsCollection.insertOne(payment)
+            const paymentResult = await paymentsCollection.insertOne(payment)
 
             // delete each item from the cart
             console.log('payment info', payment);
 
-            const query = {_id: {
-                $in: payment.cartIds.map(id => new ObjectId(id))
-            }};
+            const query = {
+                _id: {
+                    $in: payment.cartIds.map(id => new ObjectId(id))
+                }
+            };
             const deleteResult = await cartCollection.deleteMany(query);
-            res.send({result, deleteResult})
+            res.send({ paymentResult, deleteResult })
         })
 
         // Send a ping to confirm a successful connection

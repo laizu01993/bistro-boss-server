@@ -235,10 +235,10 @@ async function run() {
         // to read payment data from payment collection by email
         app.get('/payments/:email', verifyToken, async (req, res) => {
             const query = { email: req.params.email }
-            if (req.params.email !== req.decoded.email){
-                return res.status(403).send({message: "forbidden access"})
+            if (req.params.email !== req.decoded.email) {
+                return res.status(403).send({ message: "forbidden access" })
             }
-                const result = await paymentsCollection.find(query).toArray();
+            const result = await paymentsCollection.find(query).toArray();
             res.send(result);
         })
 
@@ -258,6 +258,28 @@ async function run() {
             };
             const deleteResult = await cartCollection.deleteMany(query);
             res.send({ paymentResult, deleteResult })
+        })
+        // stats or analytics
+        app.get('/admin-stats', async (req, res) => {
+            const users = await userCollection.estimatedDocumentCount();
+
+            const menuItems = await menuCollection.estimatedDocumentCount();
+
+            const orders = await paymentsCollection.estimatedDocumentCount();
+
+            // calculate revenue
+            const result = await paymentsCollection.aggregate([
+                { $group: { _id: null, totalRevenue: { $sum: "$price" } } }
+            ]).toArray();
+
+            const revenue = result[0]?.totalRevenue || 0;
+
+            res.send({
+                users,
+                menuItems,
+                orders,
+                revenue
+            })
         })
 
         // Send a ping to confirm a successful connection

@@ -49,7 +49,7 @@ async function run() {
                 expiresIn: '10h'
             });
             res.send({ token });
-        })
+        });
 
         // middlewares
         const verifyToken = (req, res, next) => {
@@ -260,7 +260,7 @@ async function run() {
             res.send({ paymentResult, deleteResult })
         })
         // stats or analytics
-        app.get('/admin-stats', async (req, res) => {
+        app.get('/admin-stats',verifyToken, verifyAdmin, async (req, res) => {
             const users = await userCollection.estimatedDocumentCount();
 
             const menuItems = await menuCollection.estimatedDocumentCount();
@@ -269,7 +269,13 @@ async function run() {
 
             // calculate revenue
             const result = await paymentsCollection.aggregate([
-                { $group: { _id: null, totalRevenue: { $sum: "$price" } } }
+                {
+                    $group: {
+                        _id: null, totalRevenue: {
+                            $sum: "$price"
+                        }
+                    }
+                }
             ]).toArray();
 
             const revenue = result[0]?.totalRevenue || 0;
@@ -280,6 +286,38 @@ async function run() {
                 orders,
                 revenue
             })
+        });
+        // Using aggregate pipeline get order quantity and revenue by category
+        app.get('/order-stats', async(req, res) => {
+            const result = await paymentsCollection.aggregate([
+              {
+                // Split the array into separate documents
+                $unwind: '$menuItemId'
+              },
+              {
+                $lookup: {
+                    from: 'menu',
+                    localField: 'menuItemId',
+                    foreignField: '_id',
+                    as: 'menuItems'
+                }
+              },
+              {
+                $unwind: '$menuItems'
+              },
+              {
+                $group: {
+                    _id: '$menuItems.category',
+                    quantity: {
+                        $sum: 1
+                    },
+                    revenue: {
+                        $sum: '$menuItems.price'
+                    }
+                }
+              }  
+            ]).toArray();
+            res.send(result)
         })
 
         // Send a ping to confirm a successful connection

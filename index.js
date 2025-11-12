@@ -28,7 +28,7 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
 
 
         const userCollection = client.db('bistroDB').collection('users');
@@ -288,7 +288,7 @@ async function run() {
             })
         });
         // Using aggregate pipeline get order quantity and revenue by category
-        app.get('/order-stats', async(req, res) => {
+        app.get('/order-stats',verifyToken, verifyAdmin, async(req, res) => {
             const result = await paymentsCollection.aggregate([
               {
                 // Split the array into separate documents
@@ -308,21 +308,29 @@ async function run() {
               {
                 $group: {
                     _id: '$menuItems.category',
-                    quantity: {
+                      quantity: {
                         $sum: 1
                     },
                     revenue: {
                         $sum: '$menuItems.price'
                     }
                 }
-              }  
+              },
+              {
+                $project: {
+                    _id: 0,
+                    category: '$_id',
+                    quantity: '$quantity',
+                    revenue: '$revenue'
+                }
+              } 
             ]).toArray();
             res.send(result)
         })
 
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+        // await client.db("admin").command({ ping: 1 });
+        // console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();

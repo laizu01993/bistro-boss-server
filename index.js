@@ -8,7 +8,15 @@ const port = process.env.PORT || 5000;
 
 
 // middleware
-app.use(cors());
+app.use(cors({
+    origin: [
+        'http://localhost:5173',
+        'https://bistro-boss-restaurant-a8621.web.app',
+        'https://bistro-boss-restaurant-a8621.firebaseapp.com',
+        'https://bistro-boss-client-mu.vercel.app'
+    ],
+    credentials: true
+}));
 app.use(express.json());
 
 
@@ -163,7 +171,7 @@ async function run() {
                 admin = user?.role === 'admin';
             }
             res.send({ admin })
-        })
+       })
 
         // Create make admin API
         app.patch('/users/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
@@ -260,7 +268,7 @@ async function run() {
             res.send({ paymentResult, deleteResult })
         })
         // stats or analytics
-        app.get('/admin-stats',verifyToken, verifyAdmin, async (req, res) => {
+        app.get('/admin-stats', verifyToken, verifyAdmin, async (req, res) => {
             const users = await userCollection.estimatedDocumentCount();
 
             const menuItems = await menuCollection.estimatedDocumentCount();
@@ -288,42 +296,42 @@ async function run() {
             })
         });
         // Using aggregate pipeline get order quantity and revenue by category
-        app.get('/order-stats',verifyToken, verifyAdmin, async(req, res) => {
+        app.get('/order-stats', verifyToken, verifyAdmin, async (req, res) => {
             const result = await paymentsCollection.aggregate([
-              {
-                // Split the array into separate documents
-                $unwind: '$menuItemId'
-              },
-              {
-                $lookup: {
-                    from: 'menu',
-                    localField: 'menuItemId',
-                    foreignField: '_id',
-                    as: 'menuItems'
-                }
-              },
-              {
-                $unwind: '$menuItems'
-              },
-              {
-                $group: {
-                    _id: '$menuItems.category',
-                      quantity: {
-                        $sum: 1
-                    },
-                    revenue: {
-                        $sum: '$menuItems.price'
+                {
+                    // Split the array into separate documents
+                    $unwind: '$menuItemId'
+                },
+                {
+                    $lookup: {
+                        from: 'menu',
+                        localField: 'menuItemId',
+                        foreignField: '_id',
+                        as: 'menuItems'
+                    }
+                },
+                {
+                    $unwind: '$menuItems'
+                },
+                {
+                    $group: {
+                        _id: '$menuItems.category',
+                        quantity: {
+                            $sum: 1
+                        },
+                        revenue: {
+                            $sum: '$menuItems.price'
+                        }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        category: '$_id',
+                        quantity: '$quantity',
+                        revenue: '$revenue'
                     }
                 }
-              },
-              {
-                $project: {
-                    _id: 0,
-                    category: '$_id',
-                    quantity: '$quantity',
-                    revenue: '$revenue'
-                }
-              } 
             ]).toArray();
             res.send(result)
         })
